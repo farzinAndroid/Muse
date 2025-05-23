@@ -138,7 +138,7 @@ fun SearchScreen(
                                         startIndex = index
                                     )
                                 },
-                                isPlaying = false,
+                                isPlaying = musicState.currentMediaId == song.mediaId,
                                 onToggleFavorite = {
                                     playerViewmodel.setFavorite(
                                         song.mediaId,
@@ -148,6 +148,7 @@ fun SearchScreen(
                                 isFavorite = song.isFavorite,
                                 modifier = Modifier
                                     .animateItem(),
+                                searchText = state.query,
                                 menuItemList = listOf(
                                     MenuItem(
                                         text = stringResource(com.farzin.core_ui.R.string.delete),
