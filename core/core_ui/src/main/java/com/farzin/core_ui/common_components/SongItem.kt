@@ -25,6 +25,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuDefaults
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -38,7 +39,10 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -47,6 +51,8 @@ import com.farzin.core_model.Song
 import com.farzin.core_ui.R
 import com.farzin.core_ui.theme.DarkGray
 import com.farzin.core_ui.theme.Gray
+import com.farzin.core_ui.theme.LyricDialogColor
+import com.farzin.core_ui.theme.LyricHighLight
 import com.farzin.core_ui.theme.MainBlue
 import com.farzin.core_ui.theme.WhiteDarkBlue
 import com.farzin.core_ui.theme.spacing
@@ -61,6 +67,7 @@ fun SongItem(
     shouldShowPic: Boolean = true,
     isFavorite: Boolean,
     menuItemList: List<MenuItem> = emptyList(),
+    searchText:String = "",
     modifier: Modifier = Modifier,
 ) {
 
@@ -113,16 +120,60 @@ fun SongItem(
             Column(
                 horizontalAlignment = Alignment.Start,
             ) {
-                TextMedium(
-                    text = song.title,
-                    fontSize = 16.sp,
-                    color = MaterialTheme.colorScheme.WhiteDarkBlue,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(end = MaterialTheme.spacing.medium16),
-                    maxLine = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+
+                if (searchText.isNotEmpty()){
+
+                    Text(
+                        text = buildAnnotatedString {
+                            // Convert both to lowercase for case-insensitive search
+                            val lowerCaseTitle = song.title.lowercase()
+                            val lowerCaseSearchText = searchText.lowercase()
+
+                            var currentIndex = 0
+                            var startIndex: Int
+
+                            while (lowerCaseTitle.indexOf(lowerCaseSearchText, startIndex = currentIndex).also { startIndex = it } != -1) {
+                                // Append the part before the search text (in default color)
+                                append(song.title.substring(currentIndex, startIndex))
+
+                                // Append the search text with the highlight style
+                                withStyle(
+                                    style = SpanStyle(
+                                        color = MaterialTheme.colorScheme.LyricHighLight,
+                                        fontSize = 16.sp,
+
+                                    )
+                                ) {
+                                    append(song.title.substring(startIndex, startIndex + searchText.length))
+                                }
+
+                                // Update the current index to continue searching after the found text
+                                currentIndex = startIndex + searchText.length
+                            }
+
+                            // Append any remaining part of the title after the last search text occurrence
+                            append(song.title.substring(currentIndex))
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(end = MaterialTheme.spacing.medium16),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        color = MaterialTheme.colorScheme.WhiteDarkBlue, // <--- THIS SETS THE DEFAULT COLOR FOR THE WHOLE TEXT
+                        fontSize = 16.sp
+                    )
+                }else{
+                    TextMedium(
+                        text = song.title,
+                        fontSize = 16.sp,
+                        color = MaterialTheme.colorScheme.WhiteDarkBlue,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(end = MaterialTheme.spacing.medium16),
+                        maxLine = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
 
                 Spacer(Modifier.width(MaterialTheme.spacing.extraSmall4))
 

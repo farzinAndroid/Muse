@@ -36,3 +36,7 @@ val ColorScheme.LyricDialogColor: Color
 val ColorScheme.MainBlue: Color
     @Composable
     get() = Color(0xff091227)
+
+val ColorScheme.LyricHighLight: Color
+    @Composable
+    get() =  if (isSystemInDarkTheme()) Color(0xFFF53232) else Color(0xFFA90000)
