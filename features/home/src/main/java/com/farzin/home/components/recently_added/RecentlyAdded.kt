@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.MaterialTheme
@@ -27,6 +29,7 @@ fun RecentlyAdded(
     onClick: (Int,List<Song>) -> Unit,
     onToggleFavorite: (id:String,isFavorite:Boolean) -> Unit,
     onDeleteClicked:(song:Song)->Unit,
+    onAddToPlaylistClicked:(song:Song)->Unit,
     modifier: Modifier = Modifier
 ) {
 
@@ -52,7 +55,7 @@ fun RecentlyAdded(
                             onClick = {
                                 onDeleteClicked(song)
                             },
-                            iconVector = null,
+                            iconVector = Icons.Default.Delete,
                         ),
                         MenuItem(
                             text = if (!song.isFavorite) stringResource(com.farzin.core_ui.R.string.add_to_fav) else stringResource(
@@ -60,6 +63,11 @@ fun RecentlyAdded(
                             ),
                             onClick = { onToggleFavorite(song.mediaId,!song.isFavorite) },
                             iconVector = if (!song.isFavorite) Icons.Default.FavoriteBorder else Icons.Default.Favorite,
+                        ),
+                        MenuItem(
+                            text = stringResource(com.farzin.core_ui.R.string.add_to_playlist),
+                            onClick = { onAddToPlaylistClicked(song) },
+                            iconVector = Icons.Default.AddCircle,
                         ),
                     )
                 )

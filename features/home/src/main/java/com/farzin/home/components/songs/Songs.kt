@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.MaterialTheme
@@ -16,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.farzin.core_model.Song
+import com.farzin.core_ui.R
 import com.farzin.core_ui.common_components.EmptySectionText
 import com.farzin.core_ui.common_components.MenuItem
 import com.farzin.core_ui.common_components.SongItem
@@ -27,6 +30,7 @@ fun Songs(
     currentPlayingSongId: String,
     onClick: (Int, List<Song>) -> Unit,
     onDeleteClicked: (song: Song) -> Unit,
+    onAddToPlaylistClicked: (song: Song) -> Unit,
     onToggleFavorite: (id: String, isFavorite: Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -54,7 +58,7 @@ fun Songs(
                         MenuItem(
                             text = stringResource(com.farzin.core_ui.R.string.delete),
                             onClick = { onDeleteClicked(song) },
-                            iconVector = null,
+                            iconVector = Icons.Default.Delete,
                         ),
                         MenuItem(
                             text = if (!song.isFavorite) stringResource(com.farzin.core_ui.R.string.add_to_fav) else stringResource(
@@ -62,6 +66,11 @@ fun Songs(
                             ),
                             onClick = { onToggleFavorite(song.mediaId, !song.isFavorite) },
                             iconVector = if (!song.isFavorite) Icons.Default.FavoriteBorder else Icons.Default.Favorite,
+                        ),
+                        MenuItem(
+                            text =stringResource(R.string.add_to_playlist),
+                            onClick = { onAddToPlaylistClicked(song) },
+                            iconVector =Icons.Default.AddCircle,
                         ),
                     )
                 )

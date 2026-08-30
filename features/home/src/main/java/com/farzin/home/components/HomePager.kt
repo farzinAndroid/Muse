@@ -46,6 +46,7 @@ fun HomePager(
     onFolderClick: (String) -> Unit,
     onFavoriteClick: (id:String,isFavorite:Boolean) -> Unit,
     onDeleteClicked:(song:Song)->Unit,
+    onAddToPlaylistClicked:(song:Song)->Unit,
     currentPlayingSongId: String,
     songs: List<Song>,
     favoriteSongs: List<Song>,
@@ -124,6 +125,7 @@ fun HomePager(
                     songs = songs,
                     onToggleFavorite = onFavoriteClick,
                     onDeleteClicked = onDeleteClicked,
+                    onAddToPlaylistClicked = onAddToPlaylistClicked
                 )
             }
 
@@ -157,7 +159,8 @@ fun HomePager(
                     onClick = onSongClick,
                     onToggleFavorite = onFavoriteClick,
                     currentPlayingSongId = currentPlayingSongId,
-                    onDeleteClicked = onDeleteClicked
+                    onDeleteClicked = onDeleteClicked,
+                    onAddToPlaylistClicked = onAddToPlaylistClicked
                 )
             }
 
@@ -167,7 +170,8 @@ fun HomePager(
                     currentPlayingSongId = currentPlayingSongId,
                     recentSongs = recentSongs,
                     onToggleFavorite = onFavoriteClick,
-                    onDeleteClicked = onDeleteClicked
+                    onDeleteClicked = onDeleteClicked,
+                    onAddToPlaylistClicked = onAddToPlaylistClicked
                 )
             }
 

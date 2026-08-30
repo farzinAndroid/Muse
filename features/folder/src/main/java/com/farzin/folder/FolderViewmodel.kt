@@ -36,6 +36,7 @@ class FolderViewmodel @Inject constructor(
 
 
     fun getFolderByName(folderName:String) {
+        _folder.value = null
         viewModelScope.launch {
             try {
                 mediaUseCases.getFolderByNameUseCase(folderName).collectLatest {

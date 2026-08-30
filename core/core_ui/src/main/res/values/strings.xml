@@ -42,6 +42,7 @@
     <string name="yes">Yes</string>
     <string name="no">No</string>
     <string name="add_to_fav">Add to favorites</string>
+    <string name="add_to_playlist">Add to playlist</string>
     <string name="remove_from_fav">Remove from favorites</string>
     <string name="playlists">Playlists</string>
     <string name="no_playlists">No playlists</string>

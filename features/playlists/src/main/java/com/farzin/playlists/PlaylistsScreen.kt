@@ -18,6 +18,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -38,7 +39,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.farzin.core_model.Song
@@ -57,7 +57,6 @@ import com.farzin.core_ui.theme.spacing
 import com.farzin.player.PlayerViewmodel
 import com.farzin.player.player.FullPlayer
 import com.farzin.player.player.MiniMusicController
-import com.farzin.playlists.components.AddSongToPlaylistDialog
 import com.farzin.playlists.components.PlaylistDetailImage
 import kotlinx.coroutines.launch
 
@@ -66,14 +65,11 @@ import kotlinx.coroutines.launch
 fun PlaylistsScreen(
     playlistId: Int,
     playlistName: String,
-    playlistViewmodel: PlaylistViewmodel = hiltViewModel(),
-    playerViewmodel: PlayerViewmodel = hiltViewModel(),
+    playlistViewmodel: PlaylistViewmodel,
+    playerViewmodel: PlayerViewmodel,
     navController: NavController,
 ) {
 
-    val allSongsInAllPlaylists by playlistViewmodel.allSongsInAllPlaylists
-        .collectAsStateWithLifecycle(emptyList())
-    val songs by playlistViewmodel.songs.collectAsStateWithLifecycle()
     val currentPosition by playerViewmodel.currentPosition.collectAsStateWithLifecycle(0L)
     val musicState by playerViewmodel.musicState.collectAsStateWithLifecycle()
     val playbackMode by playerViewmodel.playbackMode.collectAsStateWithLifecycle()
@@ -235,7 +231,7 @@ fun PlaylistsScreen(
                     shouldHaveEndIcon = true,
                     endIcon = {
                         IconButton(
-                            onClick = { playlistViewmodel.showAddSongToPlaylistDialog = true },
+                            onClick = { playlistViewmodel.openPickSongsDialog(playlistId, songsToPlay.toList()) },
                             modifier = Modifier
                                 .size(MaterialTheme.spacing.semiLarge24)
                         ) {
@@ -306,7 +302,7 @@ fun PlaylistsScreen(
                                                 playerViewmodel.showWarningDialog = true
                                             }
                                         },
-                                        iconVector = null,
+                                        iconVector = Icons.Default.Delete,
                                     ),
                                 )
                             )
@@ -316,25 +312,6 @@ fun PlaylistsScreen(
                     EmptySectionText(stringResource(com.farzin.core_ui.R.string.no_songs_in_playlist))
                 }
 
-            }
-
-            if (playlistViewmodel.showAddSongToPlaylistDialog) {
-                AddSongToPlaylistDialog(
-                    onDismiss = { playlistViewmodel.showAddSongToPlaylistDialog = false },
-                    onConfirm = { playlistSongs ->
-                        scope.launch {
-                            playlistViewmodel.insertPlaylistSong(
-                                playlistSongs = playlistSongs,
-                                playlistId = playlistId
-                            )
-                            playlistViewmodel.showAddSongToPlaylistDialog = false
-                        }
-                    },
-                    songs = songs,
-                    playlistViewmodel = playlistViewmodel,
-                    playlistId = playlistId,
-                    songsToPlay = songsToPlay.toList()
-                )
             }
 
         }

@@ -16,6 +16,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.BottomSheetScaffold
@@ -35,7 +37,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.farzin.core_model.Song
@@ -47,6 +48,7 @@ import com.farzin.core_ui.common_components.SongItem
 import com.farzin.core_ui.common_components.convertToPosition
 import com.farzin.core_ui.common_components.convertToProgress
 import com.farzin.core_ui.common_components.deleteLauncher
+import com.farzin.core_ui.common_components.Loading
 import com.farzin.core_ui.theme.BackgroundColor
 import com.farzin.core_ui.theme.spacing
 import com.farzin.player.PlayerViewmodel
@@ -60,9 +62,9 @@ import kotlinx.coroutines.launch
 fun FolderScreen(
     folderName: String,
     navController: NavController,
-    folderViewmodel: FolderViewmodel = hiltViewModel(),
-    playerViewmodel: PlayerViewmodel = hiltViewModel(),
-    playlistViewmodel: PlaylistViewmodel = hiltViewModel(),
+    folderViewmodel: FolderViewmodel,
+    playerViewmodel: PlayerViewmodel,
+    playlistViewmodel: PlaylistViewmodel,
 ) {
     val scope = rememberCoroutineScope()
 
@@ -235,7 +237,9 @@ fun FolderScreen(
 
                 Spacer(Modifier.height(MaterialTheme.spacing.medium16))
 
-                if (!folderViewmodel.error) {
+                if (folder == null) {
+                    Loading()
+                } else if (!folderViewmodel.error) {
                     folder?.let {
                         LazyColumn(
                             modifier = Modifier
@@ -278,7 +282,12 @@ fun FolderScreen(
                                                     playerViewmodel.showWarningDialog = true
                                                 }
                                             },
-                                            iconVector = null,
+                                            iconVector = Icons.Default.Delete,
+                                        ),
+                                        MenuItem(
+                                            text = stringResource(com.farzin.core_ui.R.string.add_to_playlist),
+                                            onClick = { playlistViewmodel.openAddSongDialog(song) },
+                                            iconVector = Icons.Default.AddCircle,
                                         ),
                                         MenuItem(
                                             text = if (!song.isFavorite) stringResource(com.farzin.core_ui.R.string.add_to_fav) else stringResource(

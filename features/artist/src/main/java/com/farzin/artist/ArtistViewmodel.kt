@@ -37,6 +37,7 @@ class ArtistViewmodel @Inject constructor(
 
 
     fun getArtistById(artistId: Long) {
+        _artist.value = null
         viewModelScope.launch {
             try {
                 mediaUseCases.getArtistByIdUseCase(artistId).collectLatest {

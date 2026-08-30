@@ -37,6 +37,7 @@ class AlbumViewmodel @Inject constructor(
 
 
     fun getAlbumById(albumId: Long) {
+        _album.value = null
         viewModelScope.launch {
             try {
                 mediaUseCases.getAlbumByIdUseCase(albumId).collectLatest {

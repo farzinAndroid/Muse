@@ -10,6 +10,7 @@ import com.farzin.core_domain.usecases.media.MediaUseCases
 import com.farzin.core_model.SearchDetails
 import com.farzin.core_model.Song
 import com.farzin.core_model.db.PlaylistSong
+import com.farzin.core_model.db.toSongDB
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -48,7 +49,81 @@ class PlaylistViewmodel @Inject constructor(
 
     fun clear() = query.update { "" }
 
-    var showAddSongToPlaylistDialog by mutableStateOf(false)
+    // --- Add 1 Song to N Playlists State ---
+    var isAddSongToPlaylistsVisible by mutableStateOf(false)
+        private set
+
+    var selectedSongForPlaylist by mutableStateOf<Song?>(null)
+        private set
+
+    fun openAddSongDialog(song: Song) {
+        selectedSongForPlaylist = song
+        isAddSongToPlaylistsVisible = true
+    }
+
+    fun closeAddSongDialog() {
+        isAddSongToPlaylistsVisible = false
+        selectedSongForPlaylist = null
+    }
+
+    // --- Add N Songs to 1 Playlist State ---
+    var isPickSongsForPlaylistVisible by mutableStateOf(false)
+        private set
+
+    var targetPlaylistIdForSongs by mutableStateOf<Int?>(null)
+        private set
+
+    var existingSongsInTargetPlaylist by mutableStateOf<List<Song>>(emptyList())
+        private set
+
+    fun openPickSongsDialog(playlistId: Int, currentSongs: List<Song>) {
+        targetPlaylistIdForSongs = playlistId
+        existingSongsInTargetPlaylist = currentSongs
+        isPickSongsForPlaylistVisible = true
+    }
+
+    fun closePickSongsDialog() {
+        isPickSongsForPlaylistVisible = false
+        targetPlaylistIdForSongs = null
+        existingSongsInTargetPlaylist = emptyList()
+        clear()
+    }
+
+
+    val playlists = playlistUseCases.getAllPlaylistsUseCase().stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.Eagerly,
+        initialValue = emptyList()
+    )
+
+    fun addSongToPlaylists(playlistIds: List<Int>) {
+        val song = selectedSongForPlaylist ?: return
+        viewModelScope.launch(Dispatchers.IO) {
+            val playlistSongs = playlistIds.map { playlistId ->
+                PlaylistSong(
+                    song = song.toSongDB(),
+                    playlistId = playlistId,
+                    id = "${song.mediaId}_$playlistId"
+                )
+            }
+            playlistUseCases.insertPlaylistSongUseCase(playlistSongs)
+            closeAddSongDialog()
+        }
+    }
+
+    fun insertPlaylistSongs(playlistSongs: List<PlaylistSong>, playlistId: Int) =
+        viewModelScope.launch(Dispatchers.IO) {
+            val playlistSongsToInsert = playlistSongs.map { originalPlaylistSong ->
+                PlaylistSong(
+                    song = originalPlaylistSong.song,
+                    playlistId = playlistId,
+                    id = "${originalPlaylistSong.song.mediaId}_$playlistId"
+                )
+            }
+            playlistUseCases.insertPlaylistSongUseCase(playlistSongsToInsert)
+            closePickSongsDialog()
+        }
+
 
     val playingQueueSongs = mediaUseCases.getPlayingQueueSongsUseCase().stateIn(
         scope = viewModelScope,
@@ -79,25 +154,13 @@ class PlaylistViewmodel @Inject constructor(
 
     fun songsInPlaylist(playlistId: Int) = playlistUseCases.getSongsInPlaylistUseCase(playlistId)
 
-    fun insertPlaylistSong(playlistSongs: List<PlaylistSong>,playlistId:Int) =
-        viewModelScope.launch(Dispatchers.IO) {
-            val playlistSongsToInsert = playlistSongs.map { originalPlaylistSong ->
-                PlaylistSong(
-                    song = originalPlaylistSong.song, // Important: Keep the same song
-                    playlistId = playlistId, // Set the new playlistId
-                    id = "${originalPlaylistSong.song.mediaId}_$playlistId"
-                )
-            }
-
-            playlistUseCases.insertPlaylistSongUseCase(playlistSongsToInsert)
-        }
 
     fun deleteSongFromPlaylist(playlistSong: PlaylistSong) =
         viewModelScope.launch(Dispatchers.IO) {
             val playlistSongToDelete = PlaylistSong(
                 song = playlistSong.song,
                 playlistId = playlistSong.playlistId,
-                id = "${playlistSong.song.mediaId}_${playlistSong.playlistId}" // Generate the correct ID
+                id = "${playlistSong.song.mediaId}_${playlistSong.playlistId}"
             )
             playlistUseCases.deleteSongInPlaylistUseCase(playlistSongToDelete)
         }

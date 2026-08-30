@@ -29,7 +29,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.farzin.core_model.Album
@@ -65,6 +64,9 @@ import kotlinx.coroutines.launch
 @Composable
 fun HomeScreen(
     navController: NavController,
+    homeViewmodel: HomeViewmodel,
+    playerViewmodel: PlayerViewmodel,
+    playlistViewmodel: PlaylistViewmodel,
 ) {
 
     val context = LocalContext.current
@@ -80,7 +82,12 @@ fun HomeScreen(
 
     when (permissionState.status.isGranted) {
         true -> {
-            Home(navController = navController)
+            Home(
+                navController = navController,
+                homeViewmodel = homeViewmodel,
+                playerViewmodel = playerViewmodel,
+                playlistViewmodel = playlistViewmodel
+            )
         }
 
         false -> {
@@ -100,14 +107,12 @@ fun HomeScreen(
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter", "CoroutineCreationDuringComposition")
 @Composable
 fun Home(
-    homeViewmodel: HomeViewmodel = hiltViewModel(),
-    playerViewmodel: PlayerViewmodel = hiltViewModel(),
-    playlistViewmodel: PlaylistViewmodel = hiltViewModel(),
+    homeViewmodel: HomeViewmodel,
+    playerViewmodel: PlayerViewmodel,
+    playlistViewmodel: PlaylistViewmodel,
     navController: NavController,
 ) {
-
     val activity = LocalContext.current as Activity
-    val context = LocalContext.current
 
     var showFilter by remember { mutableStateOf(false) }
 
@@ -299,76 +304,81 @@ fun Home(
         sheetDragHandle = null,
         sheetShape = RoundedCornerShape(0.dp),
         content = {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.BackgroundColor)
-            ) {
-                HomeTopBar(
-                    onSearchClicked = {
-                        navController.navigate(Screens.Search)
-                    },
-                    onFilterClicked = {
-                        showFilter = !showFilter
-                    },
-                    showFilter = showFilter
-                )
-
-
-                FilterSection(
-                    showFilter = showFilter,
-                    sortOrder = sortOrder,
-                    sortBy = sortBy,
-                    onSortOrderClicked = {
-                        playerViewmodel.onChangeSortOrder(it)
-                    },
-                    onSortByClicked = {
-                        playerViewmodel.onChangeSortBy(it)
-                    }
-                )
-
-                if (loading) {
-                    Loading()
-                } else {
-                    HomePager(
-                        currentPlayingSongId = musicState.currentMediaId,
-                        songs = songs,
-                        favoriteSongs = favoriteSongs,
-                        albums = albums,
-                        onSongClick = { index, songsList ->
-                            playerViewmodel.play(songsList, index)
-                            Log.e("TAG",playlistViewmodel.isSongInPlaylist(songsList[index]).toString())
+            Box(){
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.BackgroundColor)
+                ) {
+                    HomeTopBar(
+                        onSearchClicked = {
+                            navController.navigate(Screens.Search)
                         },
-                        onAlbumClick = { albumId ->
-                            navController.navigate(Screens.Album(albumId))
+                        onFilterClicked = {
+                            showFilter = !showFilter
                         },
-                        musicState = musicState,
-                        artists = artists,
-                        onArtistClick = { artistId ->
-                            navController.navigate(Screens.Artist(artistId))
-                        },
-                        folders = folders,
-                        onFolderClick = { name ->
-                            navController.navigate(Screens.Folder(name))
-                        },
-                        onFavoriteClick = { id: String, isFavorite: Boolean ->
-                            playerViewmodel.setFavorite(id, isFavorite)
-                        },
-                        recentSongs = recentSongs,
-                        onDeleteClicked = {
-                            songToDelete = it
-                            playerViewmodel.showWarningDialog = true
-                        },
-                        playlists = playlists,
-                        onPlaylistClicked = { playlist ->
-                            navController.navigate(
-                                Screens.Playlists(
-                                    playlistId = playlist.id,
-                                    playlistName = playlist.name
-                                )
-                            )
-                        },
+                        showFilter = showFilter
                     )
+
+
+                    FilterSection(
+                        showFilter = showFilter,
+                        sortOrder = sortOrder,
+                        sortBy = sortBy,
+                        onSortOrderClicked = {
+                            playerViewmodel.onChangeSortOrder(it)
+                        },
+                        onSortByClicked = {
+                            playerViewmodel.onChangeSortBy(it)
+                        }
+                    )
+
+                    if (loading) {
+                        Loading()
+                    } else {
+                        HomePager(
+                            currentPlayingSongId = musicState.currentMediaId,
+                            songs = songs,
+                            favoriteSongs = favoriteSongs,
+                            albums = albums,
+                            onSongClick = { index, songsList ->
+                                playerViewmodel.play(songsList, index)
+                                Log.e("TAG",playlistViewmodel.isSongInPlaylist(songsList[index]).toString())
+                            },
+                            onAlbumClick = { albumId ->
+                                navController.navigate(Screens.Album(albumId))
+                            },
+                            musicState = musicState,
+                            artists = artists,
+                            onArtistClick = { artistId ->
+                                navController.navigate(Screens.Artist(artistId))
+                            },
+                            folders = folders,
+                            onFolderClick = { name ->
+                                navController.navigate(Screens.Folder(name))
+                            },
+                            onFavoriteClick = { id: String, isFavorite: Boolean ->
+                                playerViewmodel.setFavorite(id, isFavorite)
+                            },
+                            recentSongs = recentSongs,
+                            onDeleteClicked = {
+                                songToDelete = it
+                                playerViewmodel.showWarningDialog = true
+                            },
+                            playlists = playlists,
+                            onPlaylistClicked = { playlist ->
+                                navController.navigate(
+                                    Screens.Playlists(
+                                        playlistId = playlist.id,
+                                        playlistName = playlist.name
+                                    )
+                                )
+                            },
+                            onAddToPlaylistClicked = {
+                                playlistViewmodel.openAddSongDialog(it)
+                            }
+                        )
+                    }
                 }
             }
         }

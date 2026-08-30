@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.MaterialTheme
@@ -26,7 +28,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.farzin.core_model.Song
@@ -49,9 +50,9 @@ import kotlinx.coroutines.launch
 @Composable
 fun SearchScreen(
     navController: NavController,
-    searchViewmodel: SearchViewmodel = hiltViewModel(),
-    playerViewmodel: PlayerViewmodel = hiltViewModel(),
-    playlistViewmodel: PlaylistViewmodel = hiltViewModel(),
+    searchViewmodel: SearchViewmodel,
+    playerViewmodel: PlayerViewmodel,
+    playlistViewmodel: PlaylistViewmodel,
 ) {
 
     val scope = rememberCoroutineScope()
@@ -158,7 +159,12 @@ fun SearchScreen(
                                                 playerViewmodel.showWarningDialog = true
                                             }
                                         },
-                                        iconVector = null,
+                                        iconVector = Icons.Default.Delete,
+                                    ),
+                                    MenuItem(
+                                        text = stringResource(com.farzin.core_ui.R.string.add_to_playlist),
+                                        onClick = { playlistViewmodel.openAddSongDialog(song) },
+                                        iconVector = Icons.Default.AddCircle,
                                     ),
                                     MenuItem(
                                         text = if (!song.isFavorite) stringResource(com.farzin.core_ui.R.string.add_to_fav) else stringResource(
