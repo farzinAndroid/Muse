@@ -57,6 +57,8 @@ import com.farzin.core_ui.theme.spacing
 import com.farzin.player.PlayerViewmodel
 import com.farzin.player.player.FullPlayer
 import com.farzin.player.player.MiniMusicController
+import com.farzin.core_model.db.toSongDB
+import com.farzin.core_ui.common_components.SelectionTopBar
 import com.farzin.playlists.components.PlaylistDetailImage
 import kotlinx.coroutines.launch
 
@@ -83,6 +85,8 @@ fun PlaylistsScreen(
 
     var songsToPlay by remember { mutableStateOf<Set<Song>>(emptySet()) }
     var songToDelete by remember { mutableStateOf(PlaylistSong()) }
+    var selectedSongs by remember { mutableStateOf<Set<Song>>(emptySet()) }
+    val isInSelectionMode = selectedSongs.isNotEmpty()
 
     LaunchedEffect(songsInPlaylist) {
         songsToPlay = songsInPlaylist.reversed().map { it.song.toSong() }.toSet()
@@ -222,29 +226,46 @@ fun PlaylistsScreen(
                     .background(MaterialTheme.colorScheme.BackgroundColor),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                DetailTopBar(
-                    onBackClicked = {
-                        navController.navigateUp()
-                    },
-                    text = playlistName,
-                    shouldHaveMiddleText = true,
-                    shouldHaveEndIcon = true,
-                    endIcon = {
-                        IconButton(
-                            onClick = { playlistViewmodel.openPickSongsDialog(playlistId, songsToPlay.toList()) },
-                            modifier = Modifier
-                                .size(MaterialTheme.spacing.semiLarge24)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.Add,
-                                contentDescription = "",
-                                modifier = Modifier
-                                    .fillMaxSize(),
-                                tint = MaterialTheme.colorScheme.WhiteDarkBlue
+                if (isInSelectionMode) {
+                    SelectionTopBar(
+                        selectedCount = selectedSongs.size,
+                        onCloseClicked = { selectedSongs = emptySet() },
+                        onDeleteClicked = {
+                            songToDelete = PlaylistSong(
+                                song = selectedSongs.first().toSongDB(),
+                                playlistId = playlistId
                             )
+                            playerViewmodel.showWarningDialog = true
+                        },
+                        onAddToPlaylistClicked = {
+                            playlistViewmodel.openAddMultipleSongDialog(selectedSongs.toList())
                         }
-                    }
-                )
+                    )
+                } else {
+                    DetailTopBar(
+                        onBackClicked = {
+                            navController.navigateUp()
+                        },
+                        text = playlistName,
+                        shouldHaveMiddleText = true,
+                        shouldHaveEndIcon = true,
+                        endIcon = {
+                            IconButton(
+                                onClick = { playlistViewmodel.openPickSongsDialog(playlistId, songsToPlay.toList()) },
+                                modifier = Modifier
+                                    .size(MaterialTheme.spacing.semiLarge24)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Add,
+                                    contentDescription = "",
+                                    modifier = Modifier
+                                        .fillMaxSize(),
+                                    tint = MaterialTheme.colorScheme.WhiteDarkBlue
+                                )
+                            }
+                        }
+                    )
+                }
 
                 Spacer(Modifier.height(MaterialTheme.spacing.medium16))
 
@@ -268,15 +289,33 @@ fun PlaylistsScreen(
                         itemsIndexed(songsInPlaylist.reversed(), key = { _, playlistSong ->
                             playlistSong.id
                         }) { index, playlistSong ->
+                            val currentSong = playlistSong.song.toSong()
+                            val isSelected = currentSong in selectedSongs
                             Spacer(Modifier.height(MaterialTheme.spacing.small8))
                             SongItem(
+                                song = currentSong,
                                 onClick = {
-                                    playerViewmodel.play(
-                                        songs = songsToPlay.toList(),
-                                        startIndex = index
-                                    )
+                                    if (isInSelectionMode) {
+                                        selectedSongs = if (isSelected) {
+                                            selectedSongs - currentSong
+                                        } else {
+                                            selectedSongs + currentSong
+                                        }
+                                    } else {
+                                        playerViewmodel.play(
+                                            songs = songsToPlay.toList(),
+                                            startIndex = index
+                                        )
+                                    }
                                 },
-                                song = playlistSong.song.toSong(),
+                                onLongClick = {
+                                    selectedSongs = if (isSelected) {
+                                        selectedSongs - currentSong
+                                    } else {
+                                        selectedSongs + currentSong
+                                    }
+                                },
+                                isSelected = isSelected,
                                 isPlaying = playlistSong.song.mediaId == musicState.currentMediaId,
                                 onToggleFavorite = {
                                     playerViewmodel.setFavorite(

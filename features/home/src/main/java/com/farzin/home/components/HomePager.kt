@@ -11,6 +11,7 @@ import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
@@ -40,6 +41,9 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun HomePager(
+    selectedSongs: Set<Song>,
+    onToggleSelection: (Song) -> Unit,
+    onClearSelection: () -> Unit,
     onSongClick: (index:Int,songs:List<Song>) -> Unit,
     onAlbumClick: (Long) -> Unit,
     onArtistClick: (Long) -> Unit,
@@ -65,6 +69,12 @@ fun HomePager(
         pageCount = { tabs.size },
     )
     val selectedTabIndex = pagerState.currentPage
+
+    LaunchedEffect(selectedTabIndex) {
+        if (selectedSongs.isNotEmpty()) {
+            onClearSelection()
+        }
+    }
 
 
     ScrollableTabRow(
@@ -120,6 +130,8 @@ fun HomePager(
         when (page) {
             MediaTab.Songs.ordinal -> {
                 Songs(
+                    selectedSongs = selectedSongs,
+                    onToggleSelection = onToggleSelection,
                     onClick = onSongClick,
                     currentPlayingSongId = currentPlayingSongId,
                     songs = songs,
@@ -155,6 +167,8 @@ fun HomePager(
 
             MediaTab.Favorites.ordinal->{
                 Favorites(
+                    selectedSongs = selectedSongs,
+                    onToggleSelection = onToggleSelection,
                     favoriteSongs = favoriteSongs,
                     onClick = onSongClick,
                     onToggleFavorite = onFavoriteClick,
@@ -166,6 +180,8 @@ fun HomePager(
 
             MediaTab.RecentlyAdded.ordinal->{
                 RecentlyAdded(
+                    selectedSongs = selectedSongs,
+                    onToggleSelection = onToggleSelection,
                     onClick = onSongClick,
                     currentPlayingSongId = currentPlayingSongId,
                     recentSongs = recentSongs,

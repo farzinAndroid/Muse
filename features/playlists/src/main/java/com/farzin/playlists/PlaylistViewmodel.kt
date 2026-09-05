@@ -49,24 +49,39 @@ class PlaylistViewmodel @Inject constructor(
 
     fun clear() = query.update { "" }
 
-    // --- Add 1 Song to N Playlists State ---
+
     var isAddSongToPlaylistsVisible by mutableStateOf(false)
         private set
 
-    var selectedSongForPlaylist by mutableStateOf<Song?>(null)
+    var selectedSingleSongForPlaylist by mutableStateOf<Song?>(null)
         private set
 
-    fun openAddSongDialog(song: Song) {
-        selectedSongForPlaylist = song
+
+    var selectedMultipleSongForPlaylist by mutableStateOf<List<Song>?>(null)
+        private set
+
+    fun openAddSingleSongDialog(song: Song) {
+        selectedSingleSongForPlaylist = song
+        isAddSongToPlaylistsVisible = true
+    }
+
+
+    fun openAddMultipleSongDialog(songs: List<Song>) {
+        selectedMultipleSongForPlaylist = songs
         isAddSongToPlaylistsVisible = true
     }
 
     fun closeAddSongDialog() {
         isAddSongToPlaylistsVisible = false
-        selectedSongForPlaylist = null
+        selectedSingleSongForPlaylist = null
+        selectedMultipleSongForPlaylist = null
     }
 
-    // --- Add N Songs to 1 Playlist State ---
+
+
+
+
+
     var isPickSongsForPlaylistVisible by mutableStateOf(false)
         private set
 
@@ -97,7 +112,7 @@ class PlaylistViewmodel @Inject constructor(
     )
 
     fun addSongToPlaylists(playlistIds: List<Int>) {
-        val song = selectedSongForPlaylist ?: return
+        val song = selectedSingleSongForPlaylist ?: return
         viewModelScope.launch(Dispatchers.IO) {
             val playlistSongs = playlistIds.map { playlistId ->
                 PlaylistSong(
@@ -125,12 +140,26 @@ class PlaylistViewmodel @Inject constructor(
         }
 
 
+    fun insertMultipleSongsToPlaylistsSongs(playlistSongs: List<Song>?, playlistIds: List<Int>) =
+        viewModelScope.launch(Dispatchers.IO) {
+            playlistIds.forEach {playlistId->
+                val playlistSongsToInsert = playlistSongs?.map { originalPlaylistSong ->
+                    PlaylistSong(
+                        song = originalPlaylistSong.toSongDB(),
+                        playlistId = playlistId,
+                        id = "${originalPlaylistSong.toSongDB().mediaId}_$playlistId"
+                    )
+                }
+                playlistUseCases.insertPlaylistSongUseCase(playlistSongsToInsert!!)
+            }
+            closeAddSongDialog()
+        }
+
     val playingQueueSongs = mediaUseCases.getPlayingQueueSongsUseCase().stateIn(
         scope = viewModelScope,
         started = SharingStarted.Eagerly,
         initialValue = emptyList()
     )
-
 
     val songs = mediaUseCases.getSongsUseCase().stateIn(
         scope = viewModelScope,

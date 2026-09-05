@@ -7,7 +7,6 @@ import com.farzin.core_domain.usecases.media.MediaUseCases
 import com.farzin.core_domain.usecases.preferences.PreferencesUseCases
 import com.farzin.core_model.Song
 import com.farzin.core_model.db.Playlist
-import com.farzin.core_model.db.PlaylistSong
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -16,9 +15,9 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -88,6 +87,24 @@ class HomeViewmodel @Inject constructor(
         initialValue = HomeState.Loading
     )
 
+    // --- Selection State Management ---
+    private val _selectedSongs = MutableStateFlow<Set<Song>>(emptySet())
+    val selectedSongs: StateFlow<Set<Song>> = _selectedSongs.asStateFlow()
+
+    fun toggleSelection(song: Song) {
+        _selectedSongs.update { currentSet ->
+            if (song in currentSet) {
+                currentSet - song
+            } else {
+                currentSet + song
+            }
+        }
+    }
+
+    fun clearSelection() {
+        _selectedSongs.update { emptySet() }
+    }
+    // -----------------------------------
 
     fun createPlaylist(playlist: Playlist){
         viewModelScope.launch(Dispatchers.IO) {

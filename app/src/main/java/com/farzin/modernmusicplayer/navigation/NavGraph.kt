@@ -13,33 +13,23 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
 import com.farzin.album.AlbumScreen
-import com.farzin.album.AlbumViewmodel
 import com.farzin.artist.ArtistScreen
-import com.farzin.artist.ArtistViewmodel
 import com.farzin.core_ui.Screens
 import com.farzin.core_ui.common_components.AddToPlaylistDialogContent
 import com.farzin.folder.FolderScreen
-import com.farzin.folder.FolderViewmodel
 import com.farzin.home.home.HomeScreen
-import com.farzin.home.home.HomeViewmodel
 import com.farzin.player.PlayerViewmodel
 import com.farzin.playlists.PlaylistViewmodel
 import com.farzin.playlists.PlaylistsScreen
 import com.farzin.playlists.components.AddSongToPlaylistDialog
 import com.farzin.search.search.SearchScreen
-import com.farzin.search.search.SearchViewmodel
 import kotlinx.coroutines.launch
 
 @Composable
 fun NavGraph(
     navHostController: NavHostController,
-    homeViewmodel: HomeViewmodel,
     playerViewmodel: PlayerViewmodel,
-    playlistViewmodel: PlaylistViewmodel,
-    albumViewmodel: AlbumViewmodel,
-    artistViewmodel: ArtistViewmodel,
-    folderViewmodel: FolderViewmodel,
-    searchViewmodel: SearchViewmodel
+    playlistViewmodel: PlaylistViewmodel
 ) {
     val playlists by playlistViewmodel.playlists.collectAsStateWithLifecycle()
     val songs by playlistViewmodel.songs.collectAsStateWithLifecycle()
@@ -54,7 +44,6 @@ fun NavGraph(
             composable<Screens.Home> {
                 HomeScreen(
                     navController = navHostController,
-                    homeViewmodel = homeViewmodel,
                     playerViewmodel = playerViewmodel,
                     playlistViewmodel = playlistViewmodel
                 )
@@ -65,7 +54,6 @@ fun NavGraph(
                 AlbumScreen(
                     albumId = args.albumId,
                     navController = navHostController,
-                    albumViewModel = albumViewmodel,
                     playerViewmodel = playerViewmodel,
                     playlistViewmodel = playlistViewmodel
                 )
@@ -77,7 +65,6 @@ fun NavGraph(
                 ArtistScreen(
                     artistId = args.artistId,
                     navController = navHostController,
-                    artistViewmodel = artistViewmodel,
                     playerViewmodel = playerViewmodel,
                     playlistViewmodel = playlistViewmodel
                 )
@@ -90,7 +77,6 @@ fun NavGraph(
                 FolderScreen(
                     folderName = args.folderName,
                     navController = navHostController,
-                    folderViewmodel = folderViewmodel,
                     playerViewmodel = playerViewmodel,
                     playlistViewmodel = playlistViewmodel
                 )
@@ -100,7 +86,6 @@ fun NavGraph(
             composable<Screens.Search> {
                 SearchScreen(
                     navController = navHostController,
-                    searchViewmodel = searchViewmodel,
                     playerViewmodel = playerViewmodel,
                     playlistViewmodel = playlistViewmodel
                 )
@@ -120,13 +105,25 @@ fun NavGraph(
 
         }
 
-        // Add 1 song to N playlists
+
         if (playlistViewmodel.isAddSongToPlaylistsVisible) {
             Dialog(onDismissRequest = { playlistViewmodel.closeAddSongDialog() }) {
                 AddToPlaylistDialogContent(
                     playlists = playlists,
                     onConfirm = {
-                        playlistViewmodel.addSongToPlaylists(it)
+                        when {
+                            playlistViewmodel.selectedSingleSongForPlaylist != null -> {
+                                playlistViewmodel.addSongToPlaylists(it)
+                            }
+
+                            playlistViewmodel.selectedMultipleSongForPlaylist != null -> {
+                                playlistViewmodel.insertMultipleSongsToPlaylistsSongs(
+                                    playlistViewmodel.selectedMultipleSongForPlaylist,
+                                    it
+                                )
+                            }
+                        }
+
                     },
                     onDismiss = {
                         playlistViewmodel.closeAddSongDialog()

@@ -29,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.farzin.core_model.Album
@@ -38,6 +39,7 @@ import com.farzin.core_model.Song
 import com.farzin.core_model.SortBy
 import com.farzin.core_model.SortOrder
 import com.farzin.core_model.db.Playlist
+import com.farzin.core_ui.R
 import com.farzin.core_ui.Screens
 import com.farzin.core_ui.common_components.WarningAlertDialog
 import com.farzin.core_ui.common_components.Loading
@@ -49,6 +51,7 @@ import com.farzin.core_ui.utils.showToast
 import com.farzin.home.components.FilterSection
 import com.farzin.home.components.HomePager
 import com.farzin.home.components.HomeTopBar
+import com.farzin.core_ui.common_components.SelectionTopBar
 import com.farzin.home.permission.AudioPermission
 import com.farzin.home.permission.PermissionScreen
 import com.farzin.player.PlayerViewmodel
@@ -64,7 +67,6 @@ import kotlinx.coroutines.launch
 @Composable
 fun HomeScreen(
     navController: NavController,
-    homeViewmodel: HomeViewmodel,
     playerViewmodel: PlayerViewmodel,
     playlistViewmodel: PlaylistViewmodel,
 ) {
@@ -75,7 +77,7 @@ fun HomeScreen(
         permission = AudioPermission,
         onPermissionResult = { result ->
             if (!result) {
-                context.showToast(context.getString(com.farzin.core_ui.R.string.grant_permission))
+                context.showToast(context.getString(R.string.grant_permission))
             }
         }
     )
@@ -84,7 +86,6 @@ fun HomeScreen(
         true -> {
             Home(
                 navController = navController,
-                homeViewmodel = homeViewmodel,
                 playerViewmodel = playerViewmodel,
                 playlistViewmodel = playlistViewmodel
             )
@@ -107,7 +108,7 @@ fun HomeScreen(
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter", "CoroutineCreationDuringComposition")
 @Composable
 fun Home(
-    homeViewmodel: HomeViewmodel,
+    homeViewmodel: HomeViewmodel = hiltViewModel(),
     playerViewmodel: PlayerViewmodel,
     playlistViewmodel: PlaylistViewmodel,
     navController: NavController,
@@ -148,6 +149,8 @@ fun Home(
     var folders by remember { mutableStateOf<List<Folder>>(emptyList()) }
     var playlists by remember { mutableStateOf<List<Playlist>>(emptyList()) }
     val homeState by homeViewmodel.homeState.collectAsStateWithLifecycle()
+    val selectedSongs by homeViewmodel.selectedSongs.collectAsStateWithLifecycle()
+
     when (val state = homeState) {
         HomeState.Loading -> {
             loading = true
@@ -310,15 +313,29 @@ fun Home(
                         .fillMaxSize()
                         .background(MaterialTheme.colorScheme.BackgroundColor)
                 ) {
-                    HomeTopBar(
-                        onSearchClicked = {
-                            navController.navigate(Screens.Search)
-                        },
-                        onFilterClicked = {
-                            showFilter = !showFilter
-                        },
-                        showFilter = showFilter
-                    )
+                    if (selectedSongs.isNotEmpty()) {
+                        SelectionTopBar(
+                            selectedCount = selectedSongs.size,
+                            onCloseClicked = { homeViewmodel.clearSelection() },
+                            onDeleteClicked = {
+                                songToDelete = selectedSongs.first()
+                                playerViewmodel.showWarningDialog = true
+                            },
+                            onAddToPlaylistClicked = {
+                                playlistViewmodel.openAddMultipleSongDialog(selectedSongs.toList())
+                            }
+                        )
+                    } else {
+                        HomeTopBar(
+                            onSearchClicked = {
+                                navController.navigate(Screens.Search)
+                            },
+                            onFilterClicked = {
+                                showFilter = !showFilter
+                            },
+                            showFilter = showFilter
+                        )
+                    }
 
 
                     FilterSection(
@@ -341,8 +358,12 @@ fun Home(
                             songs = songs,
                             favoriteSongs = favoriteSongs,
                             albums = albums,
+                            selectedSongs = selectedSongs,
+                            onToggleSelection = { homeViewmodel.toggleSelection(it) },
+                            onClearSelection = { homeViewmodel.clearSelection() },
                             onSongClick = { index, songsList ->
                                 playerViewmodel.play(songsList, index)
+
                                 Log.e("TAG",playlistViewmodel.isSongInPlaylist(songsList[index]).toString())
                             },
                             onAlbumClick = { albumId ->
@@ -375,7 +396,7 @@ fun Home(
                                 )
                             },
                             onAddToPlaylistClicked = {
-                                playlistViewmodel.openAddSongDialog(it)
+                                playlistViewmodel.openAddSingleSongDialog(it)
                             }
                         )
                     }

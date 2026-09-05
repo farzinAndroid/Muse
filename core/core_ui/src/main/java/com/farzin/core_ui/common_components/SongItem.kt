@@ -1,10 +1,20 @@
 package com.farzin.core_ui.common_components
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -16,15 +26,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -38,7 +46,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
@@ -51,12 +58,12 @@ import com.farzin.core_model.Song
 import com.farzin.core_ui.R
 import com.farzin.core_ui.theme.DarkGray
 import com.farzin.core_ui.theme.Gray
-import com.farzin.core_ui.theme.LyricDialogColor
 import com.farzin.core_ui.theme.LyricHighLight
 import com.farzin.core_ui.theme.MainBlue
 import com.farzin.core_ui.theme.WhiteDarkBlue
 import com.farzin.core_ui.theme.spacing
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SongItem(
     song: Song,
@@ -66,19 +73,39 @@ fun SongItem(
     shouldUseDefaultPic: Boolean = false,
     shouldShowPic: Boolean = true,
     isFavorite: Boolean,
+    isSelected: Boolean = false,
+    onLongClick: (() -> Unit)? = null,
     menuItemList: List<MenuItem> = emptyList(),
-    searchText:String = "",
+    searchText: String = "",
     modifier: Modifier = Modifier,
 ) {
 
     var isMenuExpanded by remember { mutableStateOf(false) }
 
+    val clickModifier = if (onLongClick != null) {
+        Modifier.combinedClickable(
+            onClick = onClick,
+            onLongClick = onLongClick
+        )
+    } else {
+        Modifier.clickable { onClick() }
+    }
+
+    val backgroundColor = when {
+        isSelected -> MaterialTheme.colorScheme.Gray.copy(alpha = 0.5f)
+        isPlaying -> MaterialTheme.colorScheme.Gray
+        else -> Color.Transparent
+    }
+
     Row(
         modifier = modifier
             .fillMaxWidth()
             .height(60.dp)
-            .background(if (isPlaying) MaterialTheme.colorScheme.Gray else Color.Transparent)
-            .clickable { onClick() }
+            .background(backgroundColor)
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick =  onLongClick
+            )
             .padding(horizontal = MaterialTheme.spacing.medium16),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Absolute.SpaceBetween
@@ -89,29 +116,67 @@ fun SongItem(
             modifier = Modifier
                 .weight(1f)
         ) {
+            // Case 1: No picture (e.g. AlbumScreen). Animate a checkmark next to the text.
+            if (!shouldShowPic) {
+                AnimatedVisibility(
+                    visible = isSelected,
+                    enter = slideInHorizontally() + expandHorizontally() + fadeIn(),
+                    exit = slideOutHorizontally() + shrinkHorizontally() + fadeOut()
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CheckCircle,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(MaterialTheme.spacing.semiLarge24)
+                            .padding(end = MaterialTheme.spacing.small8),
+                        tint = MaterialTheme.colorScheme.WhiteDarkBlue
+                    )
+                }
+            }
+
             if (shouldShowPic) {
-                if (shouldUseDefaultPic) {
-                    Image(
-                        painter = painterResource(R.drawable.music_logo),
-                        contentDescription = "",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .size(60.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                    )
-                } else {
-                    SubcomposeAsyncImage(
-                        model = song.artworkUri,
-                        contentDescription = "",
-                        loading = null,
-                        error = {
-                            ErrorImage()
-                        },
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .size(60.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                    )
+                Box(contentAlignment = Alignment.Center) {
+                    if (shouldUseDefaultPic) {
+                        Image(
+                            painter = painterResource(R.drawable.music_logo),
+                            contentDescription = "",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .size(60.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                        )
+                    } else {
+                        SubcomposeAsyncImage(
+                            model = song.artworkUri,
+                            contentDescription = "",
+                            loading = null,
+                            error = {
+                                ErrorImage()
+                            },
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .size(60.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                        )
+                    }
+
+                    // Case 2: Picture exists. Overlay a dark scrim and checkmark over the album art.
+                    if (isSelected) {
+                        Box(
+                            modifier = Modifier
+                                .matchParentSize()
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(Color.Black.copy(alpha = 0.5f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CheckCircle,
+                                contentDescription = null,
+                                modifier = Modifier.size(MaterialTheme.spacing.semiLarge24),
+                                tint = Color.White
+                            )
+                        }
+                    }
                 }
             }
 
@@ -121,7 +186,7 @@ fun SongItem(
                 horizontalAlignment = Alignment.Start,
             ) {
 
-                if (searchText.isNotEmpty()){
+                if (searchText.isNotEmpty()) {
 
                     Text(
                         text = buildAnnotatedString {
@@ -132,7 +197,11 @@ fun SongItem(
                             var currentIndex = 0
                             var startIndex: Int
 
-                            while (lowerCaseTitle.indexOf(lowerCaseSearchText, startIndex = currentIndex).also { startIndex = it } != -1) {
+                            while (lowerCaseTitle.indexOf(
+                                    lowerCaseSearchText,
+                                    startIndex = currentIndex
+                                ).also { startIndex = it } != -1
+                            ) {
                                 // Append the part before the search text (in default color)
                                 append(song.title.substring(currentIndex, startIndex))
 
@@ -141,10 +210,14 @@ fun SongItem(
                                     style = SpanStyle(
                                         color = MaterialTheme.colorScheme.LyricHighLight,
                                         fontSize = 16.sp,
-
                                     )
                                 ) {
-                                    append(song.title.substring(startIndex, startIndex + searchText.length))
+                                    append(
+                                        song.title.substring(
+                                            startIndex,
+                                            startIndex + searchText.length
+                                        )
+                                    )
                                 }
 
                                 // Update the current index to continue searching after the found text
@@ -162,7 +235,7 @@ fun SongItem(
                         color = MaterialTheme.colorScheme.WhiteDarkBlue, // <--- THIS SETS THE DEFAULT COLOR FOR THE WHOLE TEXT
                         fontSize = 16.sp
                     )
-                }else{
+                } else {
                     TextMedium(
                         text = song.title,
                         fontSize = 16.sp,
@@ -205,14 +278,14 @@ fun SongItem(
             )
         }
 
-        if (menuItemList.isNotEmpty()){
+        if (menuItemList.isNotEmpty()) {
             DropdownMenu(
                 expanded = isMenuExpanded,
                 onDismissRequest = { isMenuExpanded = false },
                 modifier = Modifier,
                 offset = DpOffset(LocalConfiguration.current.screenWidthDp.dp, 0.dp),
                 containerColor = Color.White,
-                border = BorderStroke(1.dp,MaterialTheme.colorScheme.MainBlue)
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.MainBlue)
             ) {
 
                 menuItemList.forEachIndexed { index, menuItem ->

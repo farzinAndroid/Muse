@@ -28,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.farzin.core_model.Song
@@ -50,7 +51,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun SearchScreen(
     navController: NavController,
-    searchViewmodel: SearchViewmodel,
+    searchViewmodel: SearchViewmodel = hiltViewModel(),
     playerViewmodel: PlayerViewmodel,
     playlistViewmodel: PlaylistViewmodel,
 ) {
@@ -163,7 +164,7 @@ fun SearchScreen(
                                     ),
                                     MenuItem(
                                         text = stringResource(com.farzin.core_ui.R.string.add_to_playlist),
-                                        onClick = { playlistViewmodel.openAddSongDialog(song) },
+                                        onClick = { playlistViewmodel.openAddSingleSongDialog(song) },
                                         iconVector = Icons.Default.AddCircle,
                                     ),
                                     MenuItem(

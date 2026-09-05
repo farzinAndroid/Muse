@@ -37,6 +37,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.farzin.core_model.Song
@@ -51,6 +52,7 @@ import com.farzin.core_ui.common_components.deleteLauncher
 import com.farzin.core_ui.common_components.Loading
 import com.farzin.core_ui.theme.BackgroundColor
 import com.farzin.core_ui.theme.spacing
+import com.farzin.core_ui.common_components.SelectionTopBar
 import com.farzin.player.PlayerViewmodel
 import com.farzin.player.player.FullPlayer
 import com.farzin.player.player.MiniMusicController
@@ -61,7 +63,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun AlbumScreen(
     albumId: Long,
-    albumViewModel: AlbumViewmodel,
+    albumViewModel: AlbumViewmodel = hiltViewModel(),
     playerViewmodel: PlayerViewmodel,
     playlistViewmodel: PlaylistViewmodel,
     navController: NavController,
@@ -94,6 +96,8 @@ fun AlbumScreen(
     }
 
     var songToDelete by remember { mutableStateOf(Song()) }
+    var selectedSongs by remember { mutableStateOf<Set<Song>>(emptySet()) }
+    val isInSelectionMode = selectedSongs.isNotEmpty()
     val launcher = deleteLauncher(
         songToDelete = songToDelete,
         onSuccess = {
@@ -229,13 +233,27 @@ fun AlbumScreen(
                     .background(MaterialTheme.colorScheme.BackgroundColor),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                DetailTopBar(
-                    onBackClicked = {
-                        navController.navigateUp()
-                    },
-                    text = album?.name ?: "",
-                    shouldHaveMiddleText = false
-                )
+                if (isInSelectionMode) {
+                    SelectionTopBar(
+                        selectedCount = selectedSongs.size,
+                        onCloseClicked = { selectedSongs = emptySet() },
+                        onDeleteClicked = {
+                            songToDelete = selectedSongs.first()
+                            playerViewmodel.showWarningDialog = true
+                        },
+                        onAddToPlaylistClicked = {
+                            playlistViewmodel.openAddMultipleSongDialog(selectedSongs.toList())
+                        }
+                    )
+                } else {
+                    DetailTopBar(
+                        onBackClicked = {
+                            navController.navigateUp()
+                        },
+                        text = album?.name ?: "",
+                        shouldHaveMiddleText = false
+                    )
+                }
 
                 Spacer(Modifier.height(MaterialTheme.spacing.medium16))
 
@@ -259,15 +277,32 @@ fun AlbumScreen(
                             itemsIndexed(it.songs, key = { _, song ->
                                 song.mediaId
                             }) { index, song ->
+                                val isSelected = song in selectedSongs
                                 Spacer(Modifier.height(MaterialTheme.spacing.small8))
                                 SongItem(
-                                    onClick = {
-                                        playerViewmodel.play(
-                                            it.songs,
-                                            index
-                                        )
-                                    },
                                     song = song,
+                                    onClick = {
+                                        if (isInSelectionMode) {
+                                            selectedSongs = if (isSelected) {
+                                                selectedSongs - song
+                                            } else {
+                                                selectedSongs + song
+                                            }
+                                        } else {
+                                            playerViewmodel.play(
+                                                it.songs,
+                                                index
+                                            )
+                                        }
+                                    },
+                                    onLongClick = {
+                                        selectedSongs = if (isSelected) {
+                                            selectedSongs - song
+                                        } else {
+                                            selectedSongs + song
+                                        }
+                                    },
+                                    isSelected = isSelected,
                                     isPlaying = song.mediaId == musicState.currentMediaId,
                                     shouldShowPic = false,
                                     onToggleFavorite = { playerViewmodel.setFavorite(song.mediaId, it) },
@@ -287,7 +322,7 @@ fun AlbumScreen(
                                         ),
                                         MenuItem(
                                             text = stringResource(com.farzin.core_ui.R.string.add_to_playlist),
-                                            onClick = { playlistViewmodel.openAddSongDialog(song) },
+                                            onClick = { playlistViewmodel.openAddSingleSongDialog(song) },
                                             iconVector = Icons.Default.AddCircle,
                                         ),
                                         MenuItem(

@@ -24,6 +24,8 @@ import com.farzin.core_ui.theme.spacing
 
 @Composable
 fun Favorites(
+    selectedSongs: Set<Song>,
+    onToggleSelection: (Song) -> Unit,
     favoriteSongs:List<Song>,
     currentPlayingSongId: String,
     onClick: (Int,List<Song>) -> Unit,
@@ -32,6 +34,7 @@ fun Favorites(
     onAddToPlaylistClicked:(song:Song)->Unit,
     modifier: Modifier = Modifier
 ) {
+    val isInSelectionMode = selectedSongs.isNotEmpty()
 
     if (favoriteSongs.isNotEmpty()){
         LazyColumn(
@@ -40,10 +43,21 @@ fun Favorites(
                 .padding(bottom = 64.dp),
         ) {
             itemsIndexed(favoriteSongs, key = {_,song->song.mediaId}){ index, song ->
+                val isSelected = song in selectedSongs
                 Spacer(Modifier.height(MaterialTheme.spacing.small8))
                 SongItem(
                     song = song,
-                    onClick = { onClick(index,favoriteSongs) },
+                    onClick = {
+                        if (isInSelectionMode) {
+                            onToggleSelection(song)
+                        } else {
+                            onClick(index, favoriteSongs)
+                        }
+                    },
+                    onLongClick = {
+                        onToggleSelection(song)
+                    },
+                    isSelected = isSelected,
                     onToggleFavorite = { onToggleFavorite(song.mediaId,it) },
                     isPlaying = song.mediaId == currentPlayingSongId,
                     isFavorite = song.isFavorite,
