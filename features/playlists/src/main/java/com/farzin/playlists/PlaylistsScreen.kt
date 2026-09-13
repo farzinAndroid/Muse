@@ -58,6 +58,7 @@ import com.farzin.player.PlayerViewmodel
 import com.farzin.player.player.FullPlayer
 import com.farzin.player.player.MiniMusicController
 import com.farzin.core_model.db.toSongDB
+import com.farzin.core_ui.R
 import com.farzin.core_ui.common_components.SelectionTopBar
 import com.farzin.playlists.components.PlaylistDetailImage
 import kotlinx.coroutines.launch
@@ -84,7 +85,7 @@ fun PlaylistsScreen(
         .songsInPlaylist(playlistId).collectAsStateWithLifecycle(emptyList())
 
     var songsToPlay by remember { mutableStateOf<Set<Song>>(emptySet()) }
-    var songToDelete by remember { mutableStateOf(PlaylistSong()) }
+    var songsToDelete by remember { mutableStateOf<List<PlaylistSong>>(emptyList()) }
     var selectedSongs by remember { mutableStateOf<Set<Song>>(emptySet()) }
     val isInSelectionMode = selectedSongs.isNotEmpty()
 
@@ -118,7 +119,11 @@ fun PlaylistsScreen(
                 playerViewmodel.showWarningDialog = false
             },
             onConfirm = {
-                playlistViewmodel.deleteSongFromPlaylist(songToDelete)
+                songsToDelete.forEach { playlistSong ->
+                    playlistViewmodel.deleteSongFromPlaylist(playlistSong)
+                }
+                selectedSongs = emptySet()
+                songsToDelete = emptyList()
                 playerViewmodel.showWarningDialog = false
             }
         )
@@ -231,10 +236,12 @@ fun PlaylistsScreen(
                         selectedCount = selectedSongs.size,
                         onCloseClicked = { selectedSongs = emptySet() },
                         onDeleteClicked = {
-                            songToDelete = PlaylistSong(
-                                song = selectedSongs.first().toSongDB(),
-                                playlistId = playlistId
-                            )
+                            songsToDelete = selectedSongs.map { song ->
+                                PlaylistSong(
+                                    song = song.toSongDB(),
+                                    playlistId = playlistId
+                                )
+                            }
                             playerViewmodel.showWarningDialog = true
                         },
                         onAddToPlaylistClicked = {
@@ -328,15 +335,16 @@ fun PlaylistsScreen(
                                     .animateItem(),
                                 menuItemList = listOf(
                                     MenuItem(
-                                        text = stringResource(com.farzin.core_ui.R.string.remove_from_playlist),
+                                        text = stringResource(R.string.remove_from_playlist),
                                         onClick = {
                                             scope.launch {
-                                                songToDelete = PlaylistSong(
+                                                val pSong = PlaylistSong(
                                                     song = playlistSong.song,
                                                     playlistId = playlistId
                                                 )
+                                                songsToDelete = listOf(pSong)
                                                 songsToPlay =
-                                                    songsToPlay.filter { it.mediaId != songToDelete.song.mediaId }
+                                                    songsToPlay.filter { it.mediaId != pSong.song.mediaId }
                                                         .toSet()
                                                 playerViewmodel.showWarningDialog = true
                                             }
@@ -348,7 +356,7 @@ fun PlaylistsScreen(
                         }
                     }
                 } else {
-                    EmptySectionText(stringResource(com.farzin.core_ui.R.string.no_songs_in_playlist))
+                    EmptySectionText(stringResource(R.string.no_songs_in_playlist))
                 }
 
             }

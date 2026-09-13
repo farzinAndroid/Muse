@@ -32,6 +32,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.farzin.core_model.Song
+import com.farzin.core_ui.R
 import com.farzin.core_ui.Screens
 import com.farzin.core_ui.common_components.WarningAlertDialog
 import com.farzin.core_ui.common_components.LinearAlbumItem
@@ -64,19 +65,22 @@ fun SearchScreen(
 
     val allSongsInAllPlaylists by playlistViewmodel.allSongsInAllPlaylists
         .collectAsStateWithLifecycle(emptyList())
-    var songToDelete by remember { mutableStateOf(Song()) }
+    var songsToDelete by remember { mutableStateOf<List<Song>>(emptyList()) }
     val context = LocalContext.current
     val launcher = deleteLauncher(
-        songToDelete = songToDelete,
+        songsToDelete = songsToDelete,
         onSuccess = {
             scope.launch {
-                if (playlistViewmodel.isSongInPlaylist(songToDelete)){
-                    allSongsInAllPlaylists.forEach {
-                        if (it.song.mediaId == songToDelete.mediaId) {
-                            playlistViewmodel.deleteSongFromPlaylist(it)
+                songsToDelete.forEach { song ->
+                    if (playlistViewmodel.isSongInPlaylist(song)) {
+                        allSongsInAllPlaylists.forEach {
+                            if (it.song.mediaId == song.mediaId) {
+                                playlistViewmodel.deleteSongFromPlaylist(it)
+                            }
                         }
                     }
                 }
+                songsToDelete = emptyList()
             }
         }
     )
@@ -91,9 +95,10 @@ fun SearchScreen(
             },
             onConfirm = {
                 playerViewmodel.deleteSong(
-                    song = songToDelete,
+                    songs = songsToDelete,
                     launcher = launcher,
                 )
+                songsToDelete = emptyList()
                 playerViewmodel.showWarningDialog = false
             }
         )
@@ -122,7 +127,7 @@ fun SearchScreen(
                 ) {
                     if (state.searchDetails.songs.isNotEmpty()) {
                         item {
-                            HeaderText(stringResource(com.farzin.core_ui.R.string.songs))
+                            HeaderText(stringResource(R.string.songs))
                         }
 
                         itemsIndexed(
@@ -153,23 +158,21 @@ fun SearchScreen(
                                 searchText = state.query,
                                 menuItemList = listOf(
                                     MenuItem(
-                                        text = stringResource(com.farzin.core_ui.R.string.delete),
+                                        text = stringResource(R.string.delete),
                                         onClick = {
-                                            scope.launch {
-                                                songToDelete = song
-                                                playerViewmodel.showWarningDialog = true
-                                            }
+                                            songsToDelete = listOf(song)
+                                            playerViewmodel.showWarningDialog = true
                                         },
                                         iconVector = Icons.Default.Delete,
                                     ),
                                     MenuItem(
-                                        text = stringResource(com.farzin.core_ui.R.string.add_to_playlist),
+                                        text = stringResource(R.string.add_to_playlist),
                                         onClick = { playlistViewmodel.openAddSingleSongDialog(song) },
                                         iconVector = Icons.Default.AddCircle,
                                     ),
                                     MenuItem(
-                                        text = if (!song.isFavorite) stringResource(com.farzin.core_ui.R.string.add_to_fav) else stringResource(
-                                            com.farzin.core_ui.R.string.remove_from_fav
+                                        text = if (!song.isFavorite) stringResource(R.string.add_to_fav) else stringResource(
+                                            R.string.remove_from_fav
                                         ),
                                         onClick = { playerViewmodel.setFavorite(song.mediaId, !song.isFavorite) },
                                         iconVector = if (!song.isFavorite) Icons.Default.FavoriteBorder else Icons.Default.Favorite,
@@ -181,7 +184,7 @@ fun SearchScreen(
 
                     if (state.searchDetails.albums.isNotEmpty()) {
                         item {
-                            HeaderText(stringResource(com.farzin.core_ui.R.string.albums))
+                            HeaderText(stringResource(R.string.albums))
                         }
 
                         itemsIndexed(
@@ -204,7 +207,7 @@ fun SearchScreen(
 
                     if (state.searchDetails.artists.isNotEmpty()) {
                         item {
-                            HeaderText(stringResource(com.farzin.core_ui.R.string.artists))
+                            HeaderText(stringResource(R.string.artists))
                         }
 
                         itemsIndexed(
@@ -216,21 +219,21 @@ fun SearchScreen(
                             Spacer(Modifier.height(MaterialTheme.spacing.small8))
                             MediaItem(
                                 title = artist.name,
-                                subTitle = stringResource(com.farzin.core_ui.R.string.artist),
+                                subTitle = stringResource(R.string.artist),
                                 modifier = Modifier
                                     .clickable {
                                         navController.navigate(Screens.Artist(artist.id))
                                     }
                                     .animateItem(),
-                                darkModePic = painterResource(com.farzin.core_ui.R.drawable.artist_white),
-                                lightModePic = painterResource(com.farzin.core_ui.R.drawable.artist_blue),
+                                darkModePic = painterResource(R.drawable.artist_white),
+                                lightModePic = painterResource(R.drawable.artist_blue),
                             )
                         }
                     }
 
                     if (state.searchDetails.folders.isNotEmpty()) {
                         item {
-                            HeaderText(stringResource(com.farzin.core_ui.R.string.folders))
+                            HeaderText(stringResource(R.string.folders))
                         }
 
                         itemsIndexed(
@@ -248,8 +251,8 @@ fun SearchScreen(
                                         navController.navigate(Screens.Folder(folder.name))
                                     }
                                     .animateItem(),
-                                darkModePic = painterResource(com.farzin.core_ui.R.drawable.folder_white),
-                                lightModePic = painterResource(com.farzin.core_ui.R.drawable.folder_blue),
+                                darkModePic = painterResource(R.drawable.folder_white),
+                                lightModePic = painterResource(R.drawable.folder_blue),
                             )
                         }
                     }
@@ -260,5 +263,3 @@ fun SearchScreen(
         }
     }
 }
-
-

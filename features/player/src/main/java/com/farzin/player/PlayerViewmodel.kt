@@ -12,7 +12,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.abdelhakim.lyricsai.LyricsAI
 import com.farzin.core_domain.usecases.preferences.PreferencesUseCases
 import com.farzin.core_domain.usecases.remote.GetLyricsUseCase
 import com.farzin.core_media_service.MusicServiceConnection
@@ -20,14 +19,12 @@ import com.farzin.core_model.PlaybackMode
 import com.farzin.core_model.Song
 import com.farzin.core_model.SortBy
 import com.farzin.core_model.SortOrder
-import com.farzin.core_model.db.PlaylistSong
 import com.farzin.core_model.remote.Lyric
 import com.farzin.core_model.remote.LyricResult
 import com.farzin.core_model.remote.NetworkResult
 import com.farzin.core_ui.utils.showToast
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
@@ -109,11 +106,13 @@ class PlayerViewmodel @Inject constructor(
 
     var showWarningDialog by mutableStateOf(false)
     fun deleteSong(
-        song: Song,
+        songs: List<Song>,
         launcher: ManagedActivityResultLauncher<IntentSenderRequest, ActivityResult>,
     ) {
         val contentResolver = context.contentResolver
-        val uris = listOf(song.mediaUri)
+        val uris = songs.map {
+            it.mediaUri
+        }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             val pendingIntent = MediaStore.createDeleteRequest(contentResolver, uris)

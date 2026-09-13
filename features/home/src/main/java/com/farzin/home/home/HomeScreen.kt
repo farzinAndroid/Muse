@@ -62,6 +62,7 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import kotlinx.coroutines.launch
+import kotlin.collections.emptyList
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
@@ -171,18 +172,22 @@ fun Home(
     }
 
 
-    var songToDelete by remember { mutableStateOf(Song()) }
+    var songsToDelete by remember { mutableStateOf<List<Song>>(emptyList()) }
     val launcher = deleteLauncher(
-        songToDelete = songToDelete,
+        songsToDelete = songsToDelete,
         onSuccess = {
             scope.launch {
-                if (playlistViewmodel.isSongInPlaylist(songToDelete)){
+                songsToDelete.forEach {song->
+                    if (playlistViewmodel.isSongInPlaylist(song)){
                         allSongsInAllPlaylists.forEach {
-                            if (it.song.mediaId == songToDelete.mediaId) {
+                            if (it.song.mediaId == song.mediaId) {
                                 playlistViewmodel.deleteSongFromPlaylist(it)
                             }
                         }
                     }
+                }
+                homeViewmodel.clearSelection()
+                songsToDelete = emptyList()
             }
         }
     )
@@ -201,10 +206,12 @@ fun Home(
             onConfirm = {
                 scope.launch {
                     playerViewmodel.deleteSong(
-                        song = songToDelete,
+                        songs = songsToDelete,
                         launcher = launcher,
                     )
 
+                    homeViewmodel.clearSelection()
+                    songsToDelete = emptyList()
 
                     playerViewmodel.showWarningDialog = false
                 }
@@ -318,7 +325,7 @@ fun Home(
                             selectedCount = selectedSongs.size,
                             onCloseClicked = { homeViewmodel.clearSelection() },
                             onDeleteClicked = {
-                                songToDelete = selectedSongs.first()
+                                songsToDelete = selectedSongs.toList()
                                 playerViewmodel.showWarningDialog = true
                             },
                             onAddToPlaylistClicked = {
@@ -383,7 +390,7 @@ fun Home(
                             },
                             recentSongs = recentSongs,
                             onDeleteClicked = {
-                                songToDelete = it
+                                songsToDelete = listOf(it)
                                 playerViewmodel.showWarningDialog = true
                             },
                             playlists = playlists,

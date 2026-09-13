@@ -9,7 +9,6 @@ import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import com.farzin.core_model.Song
 import com.farzin.core_ui.utils.showToast
@@ -18,7 +17,7 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun deleteLauncher(
-    songToDelete:Song,
+    songsToDelete: List<Song>,
     onSuccess:()->Unit,
 ) : ManagedActivityResultLauncher<IntentSenderRequest, ActivityResult> {
 
@@ -40,9 +39,12 @@ fun deleteLauncher(
                         scope.launch {
                             onSuccess()
                             val contentResolver = context.contentResolver
-                            val uris = listOf(songToDelete.mediaUri)
 
-                            contentResolver.delete(uris[0], null, null)
+
+                            songsToDelete.forEach {
+                                contentResolver.delete(it.mediaUri, null, null)
+                            }
+
                             context.showToast(context.getString(com.farzin.core_ui.R.string.song_deleted))
                         }
                     } catch (e: Throwable) {

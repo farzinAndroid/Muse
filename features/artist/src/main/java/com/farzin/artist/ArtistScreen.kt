@@ -41,6 +41,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.farzin.core_model.Song
+import com.farzin.core_ui.R
 import com.farzin.core_ui.common_components.WarningAlertDialog
 import com.farzin.core_ui.common_components.DetailTopBar
 import com.farzin.core_ui.common_components.EmptySectionText
@@ -94,21 +95,25 @@ fun ArtistScreen(
         SheetValue.PartiallyExpanded -> false
     }
 
-    var songToDelete by remember { mutableStateOf(Song()) }
+    var songsToDelete by remember { mutableStateOf<List<Song>>(emptyList()) }
     var selectedSongs by remember { mutableStateOf<Set<Song>>(emptySet()) }
     val isInSelectionMode = selectedSongs.isNotEmpty()
     val context = LocalContext.current
     val launcher = deleteLauncher(
-        songToDelete = songToDelete,
+        songsToDelete = songsToDelete,
         onSuccess = {
             scope.launch {
-                if (playlistViewmodel.isSongInPlaylist(songToDelete)){
-                    allSongsInAllPlaylists.forEach {
-                        if (it.song.mediaId == songToDelete.mediaId) {
-                            playlistViewmodel.deleteSongFromPlaylist(it)
+                songsToDelete.forEach { song ->
+                    if (playlistViewmodel.isSongInPlaylist(song)) {
+                        allSongsInAllPlaylists.forEach {
+                            if (it.song.mediaId == song.mediaId) {
+                                playlistViewmodel.deleteSongFromPlaylist(it)
+                            }
                         }
                     }
                 }
+                selectedSongs = emptySet()
+                songsToDelete = emptyList()
             }
         }
     )
@@ -122,11 +127,15 @@ fun ArtistScreen(
                 playerViewmodel.showWarningDialog = false
             },
             onConfirm = {
-                playerViewmodel.deleteSong(
-                    song = songToDelete,
-                    launcher = launcher,
-                )
-                playerViewmodel.showWarningDialog = false
+                scope.launch {
+                    playerViewmodel.deleteSong(
+                        songs = songsToDelete,
+                        launcher = launcher,
+                    )
+                    selectedSongs = emptySet()
+                    songsToDelete = emptyList()
+                    playerViewmodel.showWarningDialog = false
+                }
             }
         )
     }
@@ -237,7 +246,7 @@ fun ArtistScreen(
                         selectedCount = selectedSongs.size,
                         onCloseClicked = { selectedSongs = emptySet() },
                         onDeleteClicked = {
-                            songToDelete = selectedSongs.first()
+                            songsToDelete = selectedSongs.toList()
                             playerViewmodel.showWarningDialog = true
                         },
                         onAddToPlaylistClicked = {
@@ -311,23 +320,21 @@ fun ArtistScreen(
                                         .animateItem(),
                                     menuItemList = listOf(
                                         MenuItem(
-                                            text = stringResource(com.farzin.core_ui.R.string.delete),
+                                            text = stringResource(R.string.delete),
                                             onClick = {
-                                                scope.launch {
-                                                    songToDelete = song
-                                                    playerViewmodel.showWarningDialog = true
-                                                }
+                                                songsToDelete = listOf(song)
+                                                playerViewmodel.showWarningDialog = true
                                             },
                                             iconVector = Icons.Default.Delete,
                                         ),
                                         MenuItem(
-                                            text = stringResource(com.farzin.core_ui.R.string.add_to_playlist),
+                                            text = stringResource(R.string.add_to_playlist),
                                             onClick = { playlistViewmodel.openAddSingleSongDialog(song) },
                                             iconVector = Icons.Default.AddCircle,
                                         ),
                                         MenuItem(
-                                            text = if (!song.isFavorite) stringResource(com.farzin.core_ui.R.string.add_to_fav) else stringResource(
-                                                com.farzin.core_ui.R.string.remove_from_fav
+                                            text = if (!song.isFavorite) stringResource(R.string.add_to_fav) else stringResource(
+                                                R.string.remove_from_fav
                                             ),
                                             onClick = { playerViewmodel.setFavorite(song.mediaId, !song.isFavorite) },
                                             iconVector = if (!song.isFavorite) Icons.Default.FavoriteBorder else Icons.Default.Favorite,
@@ -338,7 +345,7 @@ fun ArtistScreen(
                         }
                     }
                 } else {
-                    EmptySectionText(stringResource(com.farzin.core_ui.R.string.no_songs))
+                    EmptySectionText(stringResource(R.string.no_songs))
                 }
 
             }
