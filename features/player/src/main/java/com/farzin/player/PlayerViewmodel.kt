@@ -12,6 +12,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.farzin.core_domain.usecases.media.MediaUseCases
 import com.farzin.core_domain.usecases.preferences.PreferencesUseCases
 import com.farzin.core_domain.usecases.remote.GetLyricsUseCase
 import com.farzin.core_media_service.MusicServiceConnection
@@ -35,9 +36,16 @@ import javax.inject.Inject
 class PlayerViewmodel @Inject constructor(
     private val musicServiceConnection: MusicServiceConnection,
     private val preferencesUseCases: PreferencesUseCases,
+    private val mediaUseCases: MediaUseCases,
     private val getLyricsUseCase: GetLyricsUseCase,
     @ApplicationContext private val context: Context,
 ) : ViewModel() {
+
+    val playingQueueSongs = mediaUseCases.getPlayingQueueSongsUseCase().stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.Eagerly,
+        initialValue = emptyList()
+    )
 
     val musicState = musicServiceConnection.musicState
     val currentPosition = musicServiceConnection.currentPosition.stateIn(

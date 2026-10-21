@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.farzin.core_domain.usecases.media.MediaUseCases
 import com.farzin.core_domain.usecases.preferences.PreferencesUseCases
-import com.farzin.core_media_service.MusicServiceConnection
 import com.farzin.core_model.SearchDetails
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi

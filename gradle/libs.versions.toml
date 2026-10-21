@@ -3,7 +3,7 @@ agp = "8.6.0"
 retrofitVersion = "2.9.0"
 hiltAndroid = "2.51.1"
 hiltNavigationCompose = "1.2.0"
-kotlin = "1.9.20"
+kotlin = "2.0.20"
 coreKtx = "1.13.1"
 junit = "4.13.2"
 junitVersion = "1.2.1"
@@ -11,13 +11,13 @@ espressoCore = "3.6.1"
 lifecycleRuntimeKtx = "2.8.5"
 activityCompose = "1.9.2"
 composeBom = "2024.09.01"
-jetbrainsKotlinJvm = "1.9.0"
+jetbrainsKotlinJvm = "2.0.20"
 appcompat = "1.7.0"
 loggingInterceptor = "4.11.0"
 lyricsai = "1.0.2"
 material = "1.12.0"
 jvmTarget = "18"
-kspVersion = "1.9.20-1.0.14"
+kspVersion = "2.0.20-1.0.25"
 androidx-media3 = "1.4.1"
 coil = "2.6.0"
 compileSdk = "34"
@@ -83,6 +83,7 @@ retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 jetbrains-kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "jetbrainsKotlinJvm" }
 android-library = { id = "com.android.library", version.ref = "agp" }
 devtools-ksp = {id = "com.google.devtools.ksp",version.ref = "kspVersion"}
